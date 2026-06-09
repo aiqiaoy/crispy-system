@@ -2,8 +2,11 @@ name: Dump privileged event payloads
 
 on:
   issue_comment:
+  workflow_run:
   check_suite:
+    types: [requested, rerequested, completed]
   check_run:
+    types: [created, rerequested, completed]
 
 jobs:
   dump:
