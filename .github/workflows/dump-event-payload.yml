@@ -1,9 +1,8 @@
 name: Dump privileged event payloads
 
 on:
-  issue_comment:
   workflow_run:
-    workflows: [prt]
+    workflows: ["prt", "issue_comment dump"]
     types:
       - completed
   check_suite:
