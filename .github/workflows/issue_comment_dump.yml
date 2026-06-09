@@ -1,0 +1,24 @@
+name: issue_comment dump
+
+on:
+  issue_comment
+
+jobs:
+  prt-dump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Event metadata
+        run: |
+          echo "event_name:   ${{ github.event_name }}"
+          echo "action:       ${{ github.event.action }}"
+          echo "repository:   ${{ github.repository }}"
+          echo "ref:          ${{ github.ref }}"
+          echo "sha:          ${{ github.sha }}"
+          echo "actor:        ${{ github.actor }}"
+          echo "triggering:   ${{ github.triggering_actor }}"
+
+      - name: Dump full github.event payload
+        env:
+          GITHUB_EVENT_JSON: ${{ toJSON(github.event) }}
+        run: |
+          echo "$GITHUB_EVENT_JSON" | jq .
