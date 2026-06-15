@@ -20,6 +20,7 @@ jobs:
         id: case1
         continue-on-error: true
         uses: actions/checkout@cb140b4908d6f8745205667913eadda5043605a4
+        with:
           ref: ${{ github.event.pull_request.head.sha }}
           
   repo-input:
