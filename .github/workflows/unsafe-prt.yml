@@ -1,13 +1,19 @@
-name: unsafe (expected to fail)
+name: reusable called prt (expected to fail)
 
 on:
-  pull_request_target:
-
-permissions:
-  contents: read
-
+  workflow_call:
+    inputs:
+      branchName:
+        description: Ref to pass to actions/checkout
+        required: true
+        type: string
+      pullRequestJSON:
+        description: JSON string of a pull_request payload object
+        required: true
+        type: string
+        
 jobs:
-  ref-input-sha:
+  dump-payload:
     runs-on: ubuntu-latest
     steps:
       - name: Dump full github.event payload
@@ -16,26 +22,81 @@ jobs:
         run: |
           echo "$GITHUB_EVENT_JSON" | jq .
 
-      - name: ref = fork head ref
-        id: case1
-        continue-on-error: true
-        uses: actions/checkout@cb140b4908d6f8745205667913eadda5043605a4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          
-  repo-input:
+  pr-head-sha:
     runs-on: ubuntu-latest
     steps:
-      - name: ref = fork head branch name + repository = fork
-        uses: actions/checkout@cb140b4908d6f8745205667913eadda5043605a4
+      - name: checkout v4
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: checkout opt-in
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          allow-unsafe-pr-checkout: true
+      - name: expected to fail
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+  pr-head-ref-and-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout v4
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: checkout opt-in
+        uses: actions/checkout@main
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          allow-unsafe-pr-checkout: true
+      - name: expected to fail
+        uses: actions/checkout@main
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
 
-  refs-pull:
+  refs-pull-merge:
     runs-on: ubuntu-latest
     steps:
-      - name: ref = refs/pull/N/head (mirrored fork ref in base repo)
-        uses: actions/checkout@cb140b4908d6f8745205667913eadda5043605a4
+      - name: checkout v4
+        uses: actions/checkout@v4
         with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/head
+          ref: ${{ inputs.branchName }}
+      - name: checkout opt-in
+        uses: actions/checkout@main
+        with:
+          ref: ${{ inputs.branchName }}
+          allow-unsafe-pr-checkout: true
+      - name: expected to fail
+        uses: actions/checkout@main
+        with:
+          ref: ${{ inputs.branchName }}
+
+  pr-json-merge_commit_sha:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          ref: ${{ fromJSON(inputs.pullRequestJSON).merge_commit_sha }}
+      - name: checkout opt-in
+        uses: actions/checkout@main
+        with:
+          persist-credentials: false
+          ref: ${{ fromJSON(inputs.pullRequestJSON).merge_commit_sha }}
+          allow-unsafe-pr-checkout: true
+      - name: expected to fail
+        uses: actions/checkout@main
+        with:
+          persist-credentials: false
+          ref: ${{ fromJSON(inputs.pullRequestJSON).merge_commit_sha }}
+          allow-unsafe-pr-checkout: true
+
