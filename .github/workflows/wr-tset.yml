@@ -1,0 +1,62 @@
+name: workflow_run test
+
+on:
+  workflow_run:
+    workflows: [pull request ci]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  dump-payload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump full github.event payload
+        env:
+          GITHUB_EVENT_JSON: ${{ toJSON(github.event) }}
+        run: |
+          echo "$GITHUB_EVENT_JSON" | jq .
+
+  checkout-from-workflow-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.workflow_run.head_repository.full_name }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - name: checkout opt-in
+        uses: actions/checkout@main
+        with:
+          repository: ${{ github.event.workflow_run.head_repository.full_name }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          allow-unsafe-pr-checkout: true
+      - name: expected to fail
+        uses: actions/checkout@main
+        with:
+          repository: ${{ github.event.workflow_run.head_repository.full_name }}
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          
+  checkout-from-step-output:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine branch ref from step output
+        id: determine_branch_ref
+        run: |
+          # Simulate determining a PR ref from the workflow_run event
+          if [[ -n "${{ github.event.workflow_run.pull_requests[0].number }}" ]]; then
+            echo "original_branch_ref=refs/pull/${{ github.event.workflow_run.pull_requests[0].number }}/merge" >> $GITHUB_OUTPUT
+          else
+            echo "original_branch_ref=main" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Attempt checkout with step output ref (expected to fail)
+        uses: actions/checkout@main
+        with:
+          repository: ${{ github.event.workflow_run.head_repository.full_name }}
+          ref: ${{ steps.determine_branch_ref.outputs.original_branch_ref }}
+          fetch-depth: 0
