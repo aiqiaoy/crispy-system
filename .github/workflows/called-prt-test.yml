@@ -98,5 +98,5 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ fromJSON(inputs.pullRequestJSON).merge_commit_sha }}
-          allow-unsafe-pr-checkout: true
+
 
