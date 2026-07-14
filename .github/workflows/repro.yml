@@ -25,6 +25,6 @@ jobs:
         run: |
           echo "$GITHUB_EVENT_JSON" | jq .
         
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@011c9c50dd621281dae1133f716823da4b0720e3
 
 
