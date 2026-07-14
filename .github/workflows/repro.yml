@@ -5,11 +5,26 @@ on:
     types: [opened, reopened, closed]
 
 jobs:
-  label_pull_request:
+  test:
     runs-on: ubuntu-24.04
    
     steps:
+      - name: Event metadata
+        run: |
+          echo "event_name:   ${{ github.event_name }}"
+          echo "action:       ${{ github.event.action }}"
+          echo "repository:   ${{ github.repository }}"
+          echo "ref:          ${{ github.ref }}"
+          echo "sha:          ${{ github.sha }}"
+          echo "actor:        ${{ github.actor }}"
+          echo "triggering:   ${{ github.triggering_actor }}"
+
+      - name: Dump full github.event payload
+        env:
+          GITHUB_EVENT_JSON: ${{ toJSON(github.event) }}
+        run: |
+          echo "$GITHUB_EVENT_JSON" | jq .
+        
       - uses: actions/checkout@v7.0.0
 
-      - name: echo
-        run: echo Hello, world!
+
